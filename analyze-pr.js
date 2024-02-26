@@ -17,7 +17,7 @@ async function main() {
     
     // Beispiel für den Aufruf der OpenAI API
     const response = await openai.createCompletion({
-      model: "text-davinci-003", // Aktualisieren Sie dies entsprechend der neuesten Modellversion
+      model: "GPT-4", // Aktualisieren Sie dies entsprechend der neuesten Modellversion
       prompt: "Ihr Prompt hier...",
       temperature: 0.7,
       max_tokens: 150,
