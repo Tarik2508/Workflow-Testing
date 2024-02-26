@@ -1,34 +1,24 @@
-name: AI-gestützte Codeanalyse
+name: AI Code Review
 
 on:
   pull_request:
     types: [opened, reopened, synchronize]
 
 jobs:
-  code-analysis:
+  review-code:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repo
+    - name: Checkout code
       uses: actions/checkout@v2
-    - name: Run GPT-4 Analysis
-      uses: actions/github-script@v5
-      with:
-        script: |
-          const openai = require('openai');
-          openai.apiKey = process.env.API_Key;
-
-          // Beispiel, um GPT-4 mit Pull Request Daten zu füttern
-          const response = await openai.createCompletion({
-            model: 'GPT-4', 
-            prompt: 'Analyse this code: ' + codeSnippet, // Setzen Sie hier Ihren Code oder die PR-Beschreibung ein
-            temperature: 0.7,
-            max_tokens: 150,
-          });
-
-          // Kommentar mit GPT-4 Analyse hinzufügen
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: response.data.choices[0].text,
-          });
+      
+    - name: Install dependencies
+      run: |
+        npm install @octokit/rest openai
+      env:
+        NODE_VERSION: '14'
+        
+    - name: Analyze PR and commits
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: node analyze-pr.js
