@@ -6,7 +6,7 @@ const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
 // OpenAI Konfiguration und Initialisierung
 const configuration = new Configuration({
-  apiKey: process.env.API_Key,
+  apiKey: process.env.OPEN_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
 
