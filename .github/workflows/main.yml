@@ -1,4 +1,4 @@
-name: Beispiel-Workflow
+name: Worklflow-Testing
 
 on: [pull_request]
 
