@@ -1,0 +1,194 @@
+body {
+    background-image: url('./img/kahoot.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+
+}
+
+main {
+    margin-top: 10%;
+}
+
+
+.leaderboard {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px blueviolet;
+    width: 500px;
+    text-align: center;
+    margin: auto;
+
+}
+
+.leaderboard>table {
+    width: 550px;
+}
+
+
+
+.background-div {
+    background-image: url('./img/kahoot_logo.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+    height: 150px;
+    margin-left: 39%;
+}
+
+
+.button {
+    position: absolute;
+    left: 43%;
+    padding: 1%;
+}
+
+button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    border: 2px solid blueviolet;
+    color: white;
+    background-color: blueviolet;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+    margin: 0;
+
+}
+
+button:hover {
+    background-color: #46178f;
+    color: #fff;
+}
+
+
+.headline {
+    padding: 0px;
+    margin: 0px;
+    text-align: center;
+    color: #46178f;
+    padding-bottom: 10px;
+}
+
+
+.wrapper {
+    background-color: purple;
+    color: white;
+    border-radius: 10px;
+}
+
+
+.wrapper {
+    background: transparent;
+    color: #fff;
+    border-radius: 10px;
+    padding: 30px 40px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 0 10px rgba(0, 0, 0, .2);
+    border: 2px solid rgba(255, 255, 255, .2);
+}
+
+@media (max-width: 768px) {
+
+    body {
+        background-image: url('./img/mediaquerie.jpg');
+        background-size: cover;
+        background-attachment: fixed;
+    }
+
+    button {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 200px;
+        margin-left: -35%;
+        margin-bottom: 10px;
+
+        margin-top: 10px;
+
+    }
+
+    .background-div {
+        width: 325px;
+        margin-left: 5%;
+    }
+}
+
+@media (max-width: 1024px) {
+    h2 {
+        font-size: 50px;
+    }
+
+    body {
+        background-image: url('./img/mediaquerie.jpg');
+        background-size: cover;
+        background-attachment: fixed;
+    }
+
+    button {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 500px;
+        margin-left: -35%;
+        margin-bottom: 10px;
+        margin-top: 10px;
+    }
+
+    .background-div {
+        width: 400px;
+        margin-left: 28%;
+    }
+
+    .leaderboard {
+        width: 500px;
+        height: 750px;
+    }
+
+    .leaderboard>table {
+        width: 500px;
+        height: 300px;
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    h2 {
+        font-size: 40px;
+    }
+
+    body {
+        background-image: url('./img/mediaquerie.jpg');
+        background-size: cover;
+        background-attachment: fixed;
+    }
+
+    button {
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        margin-bottom: 10px;
+        margin-top: 10px;
+    }
+
+    .background-div {
+        width: 350px;
+        margin-left: 20%;
+    }
+
+    .leaderboard {
+        width: 100%;
+        height: auto;
+    }
+
+    .leaderboard>table {
+        width: 100%;
+        height: auto;
+        text-align: center;
+    }
+}
