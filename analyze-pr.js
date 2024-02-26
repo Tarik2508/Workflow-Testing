@@ -35,7 +35,7 @@ async function main() {
 
     // Senden Sie den Prompt an OpenAI
     const response = await openai.createCompletion({
-      model: "text-davinci-003", // Ersetzen Sie dies durch das aktuelle Modell
+      model: "GPT-4", // Ersetzen Sie dies durch das aktuelle Modell
       prompt: prompt,
       temperature: 0.7,
       max_tokens: 150,
