@@ -1,45 +1,68 @@
 const { Octokit } = require("@octokit/rest");
 const { OpenAI } = require("openai");
 
-// Initialisieren Sie die OpenAI Bibliothek mit Ihrem API-Schlüssel
+const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
-const owner = process.env.GITHUB_REPOSITORY_OWNER;
-const repo = process.env.GITHUB_REPOSITORY.split('/')[1];
-// Beachten Sie, dass GITHUB_REF für Pull Requests nicht direkt die PR-Nummer enthält. Diese Annahme muss angepasst werden.
-const pull_number = process.env.GITHUB_REF ? process.env.GITHUB_REF.split('/')[2] : null;
+const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
+const pull_number = process.env.PR_NUMBER; // Stellen Sie sicher, dass diese Umgebungsvariable korrekt gesetzt ist.
+
+async function fetchPRAndCommitData() {
+  // Pull Request Informationen abfragen
+  const { data: prData } = await octokit.rest.pulls.get({
+    owner,
+    repo,
+    pull_number,
+  });
+
+  // Commit-Historie für den Pull Request abfragen
+  const { data: commits } = await octokit.rest.pulls.listCommits({
+    owner,
+    repo,
+    pull_number,
+  });
+
+  const commitMessages = commits.map(commit => `- ${commit.commit.message}`).join('\n');
+
+  return {
+    prBody: prData.body,
+    commitMessages,
+  };
+}
+
+async function analyzeWithOpenAI(prompt) {
+  const response = await openai.createCompletion({
+    model: "text-davinci-003", // Ersetzen Sie dies ggf. mit einem neueren Modell
+    prompt,
+    temperature: 0.5,
+    max_tokens: 256,
+  });
+
+  return response.data.choices[0].text;
+}
+
+async function postCommentOnPR(comment) {
+  await octokit.rest.issues.createComment({
+    owner,
+    repo,
+    issue_number: pull_number,
+    body: comment,
+  });
+}
 
 async function main() {
-  // Erstellen Sie eine Instanz von Octokit
-  const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-
   try {
-    if (!pull_number) {
-      console.log("Keine Pull-Request-Nummer gefunden.");
-      return;
-    }
+    const { prBody, commitMessages } = await fetchPRAndCommitData();
+    const prompt = `Please review the following Pull Request description and commit messages for potential issues:\n\nPull Request Description:\n${prBody}\n\nCommit Messages:\n${commitMessages}`;
 
-    // Rest des Codes zur Abfrage der Pull Request und Commit-Daten...
+    const analysis = await analyzeWithOpenAI(prompt);
+    const comment = `## AI Analysis\n\n${analysis}`;
 
-    // Beispiel für den Aufruf der OpenAI API
-    const response = await openai.createCompletion({
-      model: "text-davinci-003", // Aktualisieren Sie dies entsprechend der neuesten Modellversion
-      prompt: "Ihr Prompt hier...",
-      temperature: 0.7,
-      max_tokens: 150,
-    });
+    await postCommentOnPR(comment);
 
-    // Kommentar mit GPT-4 Analyse hinzufügen
-    await octokit.rest.issues.createComment({
-      owner,
-      repo,
-      issue_number: pull_number, // Pull Request Nummern sind identisch mit Issue Nummern in GitHub
-      body: `## AI-gestützte Codeanalyse\n\n${response.data.choices[0].text}`,
-    });
-
-    console.log("Kommentar erfolgreich hinzugefügt.");
+    console.log("AI analysis posted as comment successfully.");
   } catch (error) {
-    console.error("Fehler beim Erstellen des Kommentars:", error);
+    console.error("An error occurred:", error);
   }
 }
 
