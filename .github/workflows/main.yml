@@ -6,9 +6,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Führe ein Einzeilen-Skript aus
-      run: echo Hallo, Welt!
     - name: Kommentar hinzufügen
       uses: actions/github-script@v5
       with:
