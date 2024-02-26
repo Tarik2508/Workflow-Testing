@@ -1,50 +1,34 @@
-name: Kommentiere PR und Commit Daten
+name: AI-gestützte Codeanalyse
 
-on: [pull_request]
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
 
 jobs:
-  comment-data:
+  code-analysis:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Code
+    - name: Checkout Repo
       uses: actions/checkout@v2
-    - name: Kommentiere Daten
+    - name: Run GPT-4 Analysis
       uses: actions/github-script@v5
       with:
         script: |
-          const pullRequestNumber = context.payload.pull_request.number;
-          const owner = context.repo.owner;
-          const repo = context.repo.repo;
+          const openai = require('openai');
+          openai.apiKey = process.env.API_Key;
 
-          // Pull Request Informationen extrahieren
-          const pullRequest = await github.rest.pulls.get({
-            owner: owner,
-            repo: repo,
-            pull_number: pullRequestNumber,
+          // Beispiel, um GPT-4 mit Pull Request Daten zu füttern
+          const response = await openai.createCompletion({
+            model: 'GPT-4', // Ersetzen Sie dies mit dem aktuellen GPT-4 Modell
+            prompt: 'Analyse this code: ' + codeSnippet, // Setzen Sie hier Ihren Code oder die PR-Beschreibung ein
+            temperature: 0.7,
+            max_tokens: 150,
           });
 
-          // Commit-Historie für den Pull Request extrahieren
-          const listCommits = await github.rest.pulls.listCommits({
-            owner: owner,
-            repo: repo,
-            pull_number: pullRequestNumber,
-          });
-
-          // Kommentartext vorbereiten
-          let commentBody = `### Pull Request Details:\n`;
-          commentBody += `- Title: ${pullRequest.data.title}\n`;
-          commentBody += `- Author: ${pullRequest.data.user.login}\n`;
-          commentBody += `- Status: ${pullRequest.data.state}\n\n`;
-          commentBody += `### Commit-Historie:\n`;
-
-          listCommits.data.forEach((commit, index) => {
-            commentBody += `${index + 1}. ${commit.commit.message} (von ${commit.author.login})\n`;
-          });
-
-          // Kommentar im Pull Request hinterlassen
-          await github.rest.issues.createComment({
-            owner: owner,
-            repo: repo,
-            issue_number: pullRequestNumber,
-            body: commentBody,
+          // Kommentar mit GPT-4 Analyse hinzufügen
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: response.data.choices[0].text,
           });
