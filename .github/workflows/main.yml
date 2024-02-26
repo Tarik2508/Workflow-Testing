@@ -1,21 +1,50 @@
-name: Worklflow-Testing
+name: Kommentiere PR und Commit Daten
 
 on: [pull_request]
 
 jobs:
-  build:
+  comment-data:
     runs-on: ubuntu-latest
     steps:
-    - name: Kommentar hinzufügen
+    - name: Checkout Code
+      uses: actions/checkout@v2
+    - name: Kommentiere Daten
       uses: actions/github-script@v5
       with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
-          github.rest.pulls.createReview({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: context.issue.number,
-            event: 'COMMENT',
-            body: 'Hello World!'
-          })
+          const pullRequestNumber = context.payload.pull_request.number;
+          const owner = context.repo.owner;
+          const repo = context.repo.repo;
 
+          // Pull Request Informationen extrahieren
+          const pullRequest = await github.rest.pulls.get({
+            owner: owner,
+            repo: repo,
+            pull_number: pullRequestNumber,
+          });
+
+          // Commit-Historie für den Pull Request extrahieren
+          const listCommits = await github.rest.pulls.listCommits({
+            owner: owner,
+            repo: repo,
+            pull_number: pullRequestNumber,
+          });
+
+          // Kommentartext vorbereiten
+          let commentBody = `### Pull Request Details:\n`;
+          commentBody += `- Title: ${pullRequest.data.title}\n`;
+          commentBody += `- Author: ${pullRequest.data.user.login}\n`;
+          commentBody += `- Status: ${pullRequest.data.state}\n\n`;
+          commentBody += `### Commit-Historie:\n`;
+
+          listCommits.data.forEach((commit, index) => {
+            commentBody += `${index + 1}. ${commit.commit.message} (von ${commit.author.login})\n`;
+          });
+
+          // Kommentar im Pull Request hinterlassen
+          await github.rest.issues.createComment({
+            owner: owner,
+            repo: repo,
+            issue_number: pullRequestNumber,
+            body: commentBody,
+          });
