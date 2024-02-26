@@ -1,7 +1,9 @@
-.test{}
+.test{
+    background-repeat: no-repeat;
+    
+}
 body {
     background-image: url('./img/kahoot.jpg');
-    background-repeat: no-repeat;
     background-size: cover;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     min-height: 100vh;
