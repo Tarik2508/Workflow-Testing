@@ -20,5 +20,5 @@ jobs:
     - name: Analyze PR and commits
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        OPENAI_API_KEY: ${{ secrets.API_Key }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: node analyze-pr.js
