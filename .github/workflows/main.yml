@@ -14,6 +14,7 @@ jobs:
     - name: Install dependencies
       run: |
         npm install @octokit/rest openai
+        npm install openai@latest
       env:
         NODE_VERSION: '14'
         
