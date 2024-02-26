@@ -19,7 +19,7 @@ jobs:
 
           // Beispiel, um GPT-4 mit Pull Request Daten zu füttern
           const response = await openai.createCompletion({
-            model: 'GPT-4', // Ersetzen Sie dies mit dem aktuellen GPT-4 Modell
+            model: 'GPT-4', 
             prompt: 'Analyse this code: ' + codeSnippet, // Setzen Sie hier Ihren Code oder die PR-Beschreibung ein
             temperature: 0.7,
             max_tokens: 150,
