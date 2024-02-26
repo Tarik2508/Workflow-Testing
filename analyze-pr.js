@@ -1,8 +1,13 @@
 const { Octokit } = require("@octokit/rest");
-const { OpenAI } = require("openai");
+const { Configuration, OpenAIApi } = require("openai");
 
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-const openai = new OpenAI(process.env.OPENAI_API_KEY);
+
+// Initialisieren Sie die Konfiguration für die OpenAI API mit Ihrem API-Schlüssel
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
 
 const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
 const pull_number = process.env.PR_NUMBER; // Stellen Sie sicher, dass diese Umgebungsvariable korrekt gesetzt ist.
@@ -31,14 +36,15 @@ async function fetchPRAndCommitData() {
 }
 
 async function analyzeWithOpenAI(prompt) {
+  // Anpassung für den Aufruf der createCompletion Methode
   const response = await openai.createCompletion({
-    model: "GPT-4", // Ersetzen Sie dies ggf. mit einem neueren Modell
-    prompt,
+    model: "text-davinci-003", // Aktualisieren Sie dies entsprechend Ihrer Anforderung
+    prompt: prompt,
     temperature: 0.5,
     max_tokens: 256,
   });
 
-  return response.data.choices[0].text;
+  return response.choices[0].text; // Anpassung basierend auf der tatsächlichen Antwortstruktur
 }
 
 async function postCommentOnPR(comment) {
