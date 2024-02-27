@@ -16,29 +16,29 @@ jobs:
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            const axios = require('axios');
+            const { HttpClient, HttpHeaders } = require('@actions/http-client');
+            const http = new HttpClient('github-script');
             const prTitle = context.payload.pull_request.title;
             const prBody = context.payload.pull_request.body;
             const prContent = `Please summarize the following Pull Request content:\nTitle: ${prTitle}\n\nDescription: ${prBody}`;
 
-            // Use OpenAI API to analyze the PR content
-            const openAIResponse = await axios.post(
-              'https://api.openai.com/v1/completions', 
+            const openAIResponse = await http.postJson(
+              'https://api.openai.com/v1/completions',
               {
-                model: 'GPT-4', 
+                model: 'GPT-4', // Adjust the model name based on the actual available version
                 prompt: prContent,
                 max_tokens: 150, // Adjust based on how detailed you want the response to be
                 temperature: 0.7
-              }, 
+              },
               {
-                headers: {
+                headers: new HttpHeaders({
                   'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
                   'Content-Type': 'application/json'
-                }
+                })
               }
             );
 
-            const summary = openAIResponse.data.choices[0].text.trim();
+            const summary = openAIResponse.result.choices[0].text.trim();
 
             // Post the summary as a comment on the PR
             await github.rest.issues.createComment({
