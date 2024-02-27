@@ -1,29 +1,27 @@
-name: AI Code Review
+name: Comment on PR
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+    branches:
+      - main
 
 jobs:
-  review-code:
+  comment:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14' # oder eine andere Version Ihrer Wahl
-    - name: Install dependencies
-      run: |
-        npm install @octokit/rest openai
-        npm install openai@latest
-      env:
-        NODE_VERSION: '14'
-        
-    - name: Analyze PR and commits
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
-      run: node analyze-pr.js
+      - name: Leave a comment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const prNumber = context.issue.number;
+            const comment = "Vielen Dank für deinen Pull Request! Wir werden ihn so schnell wie möglich überprüfen.";
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: comment
+            });
