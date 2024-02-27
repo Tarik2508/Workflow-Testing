@@ -48,9 +48,9 @@ jobs:
             - **URL:** ${lastCommitUrl}
           `;
           
-          // Suche nach einem vorherigen Kommentar des Bots
-          const botUsername = 'github-actions[bot]'; // Ersetze dies durch den tatsächlichen Benutzernamen des Bots, falls abweichend
-          const identifier = '<!-- PR Details Comment -->'; // Ein eindeutiger Identifikator für den Kommentar
+          // Search for a previous comment from the bot
+          const botUsername = 'Pull Request Automation Bot';
+          const identifier = '<!-- PR Details Comment -->'; // identify if a Message has already been created
           const previousComment = comments.data.find(comment => comment.user.login === botUsername && comment.body.includes(identifier));
           
           if (previousComment) {
