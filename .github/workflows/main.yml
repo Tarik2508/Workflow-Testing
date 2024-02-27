@@ -32,8 +32,12 @@ jobs:
             repo,
             pull_number: prNumber,
           });
-          const { sha: lastCommitSha, commit: { message: lastCommitMessage, author: { name: lastCommitAuthor } }, html_url: lastCommitUrl } = commits[commits.length - 1];
-
+          const lastCommit = commits[commits.length - 1];
+          const lastCommitSha = lastCommit.sha;
+          const lastCommitMessage = lastCommit.commit.message;
+          const lastCommitAuthor = lastCommit.commit.author.name;
+          const lastCommitUrl = lastCommit.html_url;
+          
           // Erstelle den Kommentar-Body
           const commentBody = `
             <!-- PR Details Comment -->
@@ -48,9 +52,9 @@ jobs:
             - **URL:** ${lastCommitUrl}
           `;
           
-          // Search for a previous comment from the bot
-          const botUsername = 'github-actions[bot]';
-          const identifier = '<!-- PR Details Comment -->'; // identify if a Message has already been created
+          // Suche nach einem vorherigen Kommentar des Bots
+          const botUsername = 'github-actions[bot]'; // Ersetze dies durch den tatsächlichen Benutzernamen des Bots, falls abweichend
+          const identifier = '<!-- PR Details Comment -->'; // Ein eindeutiger Identifikator für den Kommentar
           const previousComment = comments.data.find(comment => comment.user.login === botUsername && comment.body.includes(identifier));
           
           if (previousComment) {
