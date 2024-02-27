@@ -19,26 +19,23 @@ jobs:
           const owner = context.repo.owner;
           const repo = context.repo.repo;
           
-          // Hole alle Kommentare des PRs
+          // pull the comments from the PR
           const comments = await github.rest.issues.listComments({
             owner,
             repo,
             issue_number: prNumber,
           });
           
-          // Hole die letzten Commit-Details
+          // pull the last commit
           const { data: commits } = await github.rest.pulls.listCommits({
             owner,
             repo,
             pull_number: prNumber,
           });
-          const lastCommit = commits[commits.length - 1];
-          const lastCommitSha = lastCommit.sha;
-          const lastCommitMessage = lastCommit.commit.message;
-          const lastCommitAuthor = lastCommit.commit.author.name;
-          const lastCommitUrl = lastCommit.html_url;
+          const { sha: lastCommitSha, commit: { message: lastCommitMessage, author: { name: lastCommitAuthor } }, html_url: lastCommitUrl } = commits[commits.length - 1];
+
           
-          // Erstelle den Kommentar-Body
+          // Create the comment body
           const commentBody = `
             <!-- PR Details Comment -->
             **Pull Request Details:**
@@ -52,13 +49,13 @@ jobs:
             - **URL:** ${lastCommitUrl}
           `;
           
-          // Suche nach einem vorherigen Kommentar des Bots
-          const botUsername = 'github-actions[bot]'; // Ersetze dies durch den tatsächlichen Benutzernamen des Bots, falls abweichend
-          const identifier = '<!-- PR Details Comment -->'; // Ein eindeutiger Identifikator für den Kommentar
+          // Search for a previous comment from the bot
+          const botUsername = 'github-actions[bot]'; 
+          const identifier = '<!-- PR Details Comment -->';
           const previousComment = comments.data.find(comment => comment.user.login === botUsername && comment.body.includes(identifier));
           
           if (previousComment) {
-            // Aktualisiere den vorhandenen Kommentar
+            // Update the current Comment
             await github.rest.issues.updateComment({
               owner,
               repo,
@@ -66,7 +63,7 @@ jobs:
               body: commentBody,
             });
           } else {
-            // Erstelle einen neuen Kommentar, wenn kein vorheriger Kommentar gefunden wurde
+            // Create a new comment if there is no previous existing one.
             await github.rest.issues.createComment({
               owner,
               repo,
