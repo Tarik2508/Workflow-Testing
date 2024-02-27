@@ -1,49 +1,49 @@
-name: PR Details Comment
+name: Analyze PR with ChatGPT
 
 on:
   pull_request:
     types: [opened, synchronize]
 
 jobs:
-  comment-with-pr-details:
+  analyze-and-comment:
     runs-on: ubuntu-latest
     steps:
-      - name: Comment PR and Commit Details
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Analyze PR content and comment using ChatGPT
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            const prNumber = context.payload.pull_request.number;
+            const axios = require('axios');
             const prTitle = context.payload.pull_request.title;
             const prBody = context.payload.pull_request.body;
-            const commitsUrl = context.payload.pull_request.commits_url;
-            
-            // Fetch the last commit details
-            const commitsResponse = await github.rest.pulls.listCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber,
-            });
+            const prContent = `Please summarize the following Pull Request content:\nTitle: ${prTitle}\n\nDescription: ${prBody}`;
 
-            const lastCommit = commitsResponse.data[commitsResponse.data.length - 1];
-            const lastCommitSha = lastCommit.sha.substring(0, 7); // Get short SHA
-            const lastCommitMessage = lastCommit.commit.message;
+            // Use OpenAI API to analyze the PR content
+            const openAIResponse = await axios.post(
+              'https://api.openai.com/v1/completions', 
+              {
+                model: 'GPT-4', 
+                prompt: prContent,
+                max_tokens: 150, // Adjust based on how detailed you want the response to be
+                temperature: 0.7
+              }, 
+              {
+                headers: {
+                  'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
 
-            // Construct the comment body
-            const commentBody = `
-              **Pull Request Details:**
-              - **Title:** ${prTitle}
-              - **Description:** ${prBody}
-              
-              **Last Commit:**
-              - **SHA:** ${lastCommitSha}
-              - **Message:** ${lastCommitMessage}
-            `;
+            const summary = openAIResponse.data.choices[0].text.trim();
 
-            // Post the comment
+            // Post the summary as a comment on the PR
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: prNumber,
-              body: commentBody
+              issue_number: context.payload.pull_request.number,
+              body: `## ChatGPT Summary\n\n${summary}`
             });
