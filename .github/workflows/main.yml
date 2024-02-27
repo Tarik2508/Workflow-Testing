@@ -3,71 +3,14 @@ name: PR Automation with Azure OpenAI
 on:
   pull_request:
     types: [opened, synchronize, edited]
-  issue_comment:
-    types: [created]
-
 jobs:
-  comment-with-pr-details:
+  save-pr-details:
     runs-on: ubuntu-latest
     steps:
-    - name: Update or Comment PR Details
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          const prNumber = context.payload.pull_request.number;
-          const owner = context.repo.owner;
-          const repo = context.repo.repo;
-          
-          // pull the comments from the PR
-          const comments = await github.rest.issues.listComments({
-            owner,
-            repo,
-            issue_number: prNumber,
-          });
-          
-          // pull the last commit
-          const { data: commits } = await github.rest.pulls.listCommits({
-            owner,
-            repo,
-            pull_number: prNumber,
-          });
-          const { sha: lastCommitSha, commit: { message: lastCommitMessage, author: { name: lastCommitAuthor } }, html_url: lastCommitUrl } = commits[commits.length - 1];
-
-          
-          // Create the comment body
-          const commentBody = `
-            <!-- PR Details Comment -->
-            **Pull Request Details:**
-            - **Title:** ${context.payload.pull_request.title}
-            - **Description:** ${context.payload.pull_request.body}
-            
-            **Last Commit:**
-            - **SHA:** ${lastCommitSha}
-            - **Author:** ${lastCommitAuthor}
-            - **Message:** ${lastCommitMessage}
-            - **URL:** ${lastCommitUrl}
-          `;
-          
-          // Search for a previous comment from the bot
-          const botUsername = 'github-actions[bot]'; 
-          const identifier = '<!-- PR Details Comment -->';
-          const previousComment = comments.data.find(comment => comment.user.login === botUsername && comment.body.includes(identifier));
-          
-          if (previousComment) {
-            // Update the current Comment
-            await github.rest.issues.updateComment({
-              owner,
-              repo,
-              comment_id: previousComment.id,
-              body: commentBody,
-            });
-          } else {
-            // Create a new comment if there is no previous existing one.
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: prNumber,
-              body: commentBody,
-            });
-          }
+      - name: Checkout
+      - uses: actions/checkout@v2
+         
+      - name: Save PR details
+        run: |
+          echo "Saving PR details to pr_details.json"
+          echo '${{ toJSON(github.event.pull_request) }}' > pr_details.json
