@@ -32,12 +32,8 @@ jobs:
             repo,
             pull_number: prNumber,
           });
-          const lastCommit = commits[commits.length - 1];
-          const lastCommitSha = lastCommit.sha;
-          const lastCommitMessage = lastCommit.commit.message;
-          const lastCommitAuthor = lastCommit.commit.author.name;
-          const lastCommitUrl = lastCommit.html_url;
-          
+          const { sha: lastCommitSha, commit: { message: lastCommitMessage, author: { name: lastCommitAuthor } }, html_url: lastCommitUrl } = commits[commits.length - 1];
+
           // Erstelle den Kommentar-Body
           const commentBody = `
             <!-- PR Details Comment -->
