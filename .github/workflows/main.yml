@@ -1,45 +1,76 @@
-name: AI Security Check for Pull Requests
+name: PR Automation with Azure OpenAI
 
 on:
   pull_request:
     types: [opened, synchronize, edited]
+  issue_comment:
+    types: [created]
 
 jobs:
-  ai_security_check_for_pull_requests:
+  comment-with-pr-details:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: 16
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Finding security and privacy code vulnerabilities
-        id: ai_security_check
-        uses: obetomuniz/ai-security-check-for-pull-requests-action@v1.0.0
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          GH_REPOSITORY: ${{ github.repository }}
-          GH_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.number }}
-          OPENAI_TOKEN: ${{ secrets.OPENAI_API_KEY }}
-
-      - name: Comment on pull request
-        uses: actions/github-script@v6
-        env:
-          PR_COMMENT: ${{ steps.ai_security_check.outputs.pr_comment }}
-        with:
-          github-token: ${{ secrets.GH_TOKEN }}
-          script: |
-            const prComment = process.env.PR_COMMENT || "No security or privacy issues found.";
-            const { data } = await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: prComment
+    - name: Update or Comment PR Details
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const prNumber = context.payload.pull_request.number;
+          const owner = context.repo.owner;
+          const repo = context.repo.repo;
+          
+          // Hole alle Kommentare des PRs
+          const comments = await github.rest.issues.listComments({
+            owner,
+            repo,
+            issue_number: prNumber,
+          });
+          
+          // Hole die letzten Commit-Details
+          const { data: commits } = await github.rest.pulls.listCommits({
+            owner,
+            repo,
+            pull_number: prNumber,
+          });
+          const lastCommit = commits[commits.length - 1];
+          const lastCommitSha = lastCommit.sha;
+          const lastCommitMessage = lastCommit.commit.message;
+          const lastCommitAuthor = lastCommit.commit.author.name;
+          const lastCommitUrl = lastCommit.html_url;
+          
+          // Erstelle den Kommentar-Body
+          const commentBody = `
+            <!-- PR Details Comment -->
+            **Pull Request Details:**
+            - **Title:** ${context.payload.pull_request.title}
+            - **Description:** ${context.payload.pull_request.body}
+            
+            **Last Commit:**
+            - **SHA:** ${lastCommitSha}
+            - **Author:** ${lastCommitAuthor}
+            - **Message:** ${lastCommitMessage}
+            - **URL:** ${lastCommitUrl}
+          `;
+          
+          // Suche nach einem vorherigen Kommentar des Bots
+          const botUsername = 'github-actions[bot]'; // Ersetze dies durch den tatsächlichen Benutzernamen des Bots, falls abweichend
+          const identifier = '<!-- PR Details Comment -->'; // Ein eindeutiger Identifikator für den Kommentar
+          const previousComment = comments.data.find(comment => comment.user.login === botUsername && comment.body.includes(identifier));
+          
+          if (previousComment) {
+            // Aktualisiere den vorhandenen Kommentar
+            await github.rest.issues.updateComment({
+              owner,
+              repo,
+              comment_id: previousComment.id,
+              body: commentBody,
             });
+          } else {
+            // Erstelle einen neuen Kommentar, wenn kein vorheriger Kommentar gefunden wurde
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: prNumber,
+              body: commentBody,
+            });
+          }
