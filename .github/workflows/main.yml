@@ -1,27 +1,49 @@
-name: Comment on PR
+name: PR Details Comment
 
 on:
   pull_request:
     types: [opened, synchronize]
-  issue_comment:
-    types: [created]
-    branches:
-      - main
 
 jobs:
-  comment:
+  comment-with-pr-details:
     runs-on: ubuntu-latest
     steps:
-      - name: Leave a comment
+      - name: Comment PR and Commit Details
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            const prNumber = context.issue.number;
-            const comment = "Vielen Dank für deinen Pull Request! Wir werden ihn so schnell wie möglich überprüfen.";
-            github.rest.issues.createComment({
+            const prNumber = context.payload.pull_request.number;
+            const prTitle = context.payload.pull_request.title;
+            const prBody = context.payload.pull_request.body;
+            const commitsUrl = context.payload.pull_request.commits_url;
+            
+            // Fetch the last commit details
+            const commitsResponse = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+
+            const lastCommit = commitsResponse.data[commitsResponse.data.length - 1];
+            const lastCommitSha = lastCommit.sha.substring(0, 7); // Get short SHA
+            const lastCommitMessage = lastCommit.commit.message;
+
+            // Construct the comment body
+            const commentBody = `
+              **Pull Request Details:**
+              - **Title:** ${prTitle}
+              - **Description:** ${prBody}
+              
+              **Last Commit:**
+              - **SHA:** ${lastCommitSha}
+              - **Message:** ${lastCommitMessage}
+            `;
+
+            // Post the comment
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
-              body: comment
+              body: commentBody
             });
