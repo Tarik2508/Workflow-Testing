@@ -1,34 +1,49 @@
-name: Echo PR Details
+name: PR Details Comment
 
 on:
   pull_request:
     types: [opened, synchronize]
 
 jobs:
-  echo-pr-details:
+  comment-with-pr-details:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Echo PR Content
+      - name: Comment PR and Commit Details
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
+            const prNumber = context.payload.pull_request.number;
             const prTitle = context.payload.pull_request.title;
             const prBody = context.payload.pull_request.body;
-            // Konstruiere die Nachricht, die gepostet werden soll
-            const message = `
-              ## Pull Request Details\n
-              **Title:** ${prTitle}\n
-              **Description:**\n
-              ${prBody}
+            const commitsUrl = context.payload.pull_request.commits_url;
+            
+            // Fetch the last commit details
+            const commitsResponse = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+
+            const lastCommit = commitsResponse.data[commitsResponse.data.length - 1];
+            const lastCommitSha = lastCommit.sha.substring(0, 7); // Get short SHA
+            const lastCommitMessage = lastCommit.commit.message;
+
+            // Construct the comment body
+            const commentBody = `
+              **Pull Request Details:**
+              - **Title:** ${prTitle}
+              - **Description:** ${prBody}
+              
+              **Last Commit:**
+              - **SHA:** ${lastCommitSha}
+              - **Message:** ${lastCommitMessage}
             `;
-            // Poste die Nachricht als Kommentar zum PR
+
+            // Post the comment
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number,
-              body: message
+              issue_number: prNumber,
+              body: commentBody
             });
