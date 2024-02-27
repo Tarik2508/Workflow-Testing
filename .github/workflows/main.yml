@@ -10,47 +10,67 @@ jobs:
   comment-with-pr-details:
     runs-on: ubuntu-latest
     steps:
-      - name: Update or Comment PR Details
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            const prNumber = context.payload.pull_request.number;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const botUsername = 'github-actions[bot]'; // Ersetze dies durch den tatsächlichen Benutzernamen des Bots, falls abweichend
-            const identifier = '<!-- PR Details Comment -->'; // Ein eindeutiger Identifikator für den Kommentar
-            
-            const commentBody = `${identifier}
+    - name: Update or Comment PR Details
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const prNumber = context.payload.pull_request.number;
+          const owner = context.repo.owner;
+          const repo = context.repo.repo;
+          
+          // Hole alle Kommentare des PRs
+          const comments = await github.rest.issues.listComments({
+            owner,
+            repo,
+            issue_number: prNumber,
+          });
+          
+          // Hole die letzten Commit-Details
+          const { data: commits } = await github.rest.pulls.listCommits({
+            owner,
+            repo,
+            pull_number: prNumber,
+          });
+          const lastCommit = commits[commits.length - 1];
+          const lastCommitSha = lastCommit.sha;
+          const lastCommitMessage = lastCommit.commit.message;
+          const lastCommitAuthor = lastCommit.commit.author.name;
+          const lastCommitUrl = lastCommit.html_url;
+          
+          // Erstelle den Kommentar-Body
+          const commentBody = `
+            <!-- PR Details Comment -->
             **Pull Request Details:**
             - **Title:** ${context.payload.pull_request.title}
             - **Description:** ${context.payload.pull_request.body}
-            ...`;
             
-            // Hole alle Kommentare des PRs
-            const comments = await github.rest.issues.listComments({
+            **Last Commit:**
+            - **SHA:** ${lastCommitSha}
+            - **Author:** ${lastCommitAuthor}
+            - **Message:** ${lastCommitMessage}
+            - **URL:** ${lastCommitUrl}
+          `;
+          
+          // Suche nach einem vorherigen Kommentar des Bots
+          const botUsername = 'github-actions[bot]'; // Ersetze dies durch den tatsächlichen Benutzernamen des Bots, falls abweichend
+          const identifier = '<!-- PR Details Comment -->'; // Ein eindeutiger Identifikator für den Kommentar
+          const previousComment = comments.data.find(comment => comment.user.login === botUsername && comment.body.includes(identifier));
+          
+          if (previousComment) {
+            // Aktualisiere den vorhandenen Kommentar
+            await github.rest.issues.updateComment({
+              owner,
+              repo,
+              comment_id: previousComment.id,
+              body: commentBody,
+            });
+          } else {
+            // Erstelle einen neuen Kommentar, wenn kein vorheriger Kommentar gefunden wurde
+            await github.rest.issues.createComment({
               owner,
               repo,
               issue_number: prNumber,
+              body: commentBody,
             });
-            
-            // Suche nach einem vorherigen Kommentar des Bots
-            const previousComment = comments.data.find(comment => comment.user.login === botUsername && comment.body.includes(identifier));
-            
-            if (previousComment) {
-              // Aktualisiere den vorhandenen Kommentar
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: previousComment.id,
-                body: commentBody,
-              });
-            } else {
-              // Erstelle einen neuen Kommentar, wenn kein vorheriger Kommentar gefunden wurde
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: prNumber,
-                body: commentBody,
-              });
-            }
+          }
