@@ -49,7 +49,7 @@ jobs:
           `;
           
           // Search for a previous comment from the bot
-          const botUsername = 'Pull Request Automation Bot';
+          const botUsername = 'github-actions[bot]';
           const identifier = '<!-- PR Details Comment -->'; // identify if a Message has already been created
           const previousComment = comments.data.find(comment => comment.user.login === botUsername && comment.body.includes(identifier));
           
