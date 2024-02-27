@@ -1,6 +1,6 @@
 .test{
     background-repeat: no-repeat;
-    
+    background-color: red;
 }
 body {
     background-image: url('./img/kahoot.jpg');
