@@ -1,47 +1,46 @@
-on:
-  pull_request:
-    types: [opened, synchronize, edited]
+steps:
+  - name: Update or Comment PR Details
+    uses: actions/github-script@v6
+    with:
+      github-token: ${{secrets.GITHUB_TOKEN}}
+      script: |
+        const prNumber = context.payload.pull_request.number;
+        const owner = context.repo.owner;
+        const repo = context.repo.repo;
+        const botUsername = 'github-actions[bot]'; // Ersetze dies durch den tatsächlichen Benutzernamen des Bots, falls abweichend
+        const identifier = '<!-- PR Details Comment -->'; // Ein eindeutiger Identifikator für den Kommentar
 
-jobs:
-  comment-with-pr-details:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Comment PR and Commit Details
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            const prNumber = context.payload.pull_request.number;
-            const prTitle = context.payload.pull_request.title;
-            const prBody = context.payload.pull_request.body;
-            const commitsUrl = context.payload.pull_request.commits_url;
-            
-            // Fetch the last commit details
-            const commitsResponse = await github.rest.pulls.listCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber,
-            });
+        const commentBody = `${identifier}
+          **Pull Request Details:**
+          - **Title:** ${context.payload.pull_request.title}
+          - **Description:** ${context.payload.pull_request.body}
+          ...
+          `;
 
-            const lastCommit = commitsResponse.data[commitsResponse.data.length - 1];
-            const lastCommitSha = lastCommit.sha.substring(0, 7); // Get short SHA
-            const lastCommitMessage = lastCommit.commit.message;
+        // Hole alle Kommentare des PRs
+        const comments = await github.rest.issues.listComments({
+          owner,
+          repo,
+          issue_number: prNumber,
+        });
 
-            // Construct the comment body
-            const commentBody = `
-              **Pull Request Details:**
-              - **Title:** ${prTitle}
-              - **Description:** ${prBody}
-              
-              **Last Commit:**
-              - **SHA:** ${lastCommitSha}
-              - **Message:** ${lastCommitMessage}
-            `;
+        // Suche nach einem vorherigen Kommentar des Bots
+        const previousComment = comments.data.find(comment => comment.user.login === botUsername && comment.body.includes(identifier));
 
-            // Post the comment
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: commentBody
-            });
+        if (previousComment) {
+          // Aktualisiere den vorhandenen Kommentar
+          await github.rest.issues.updateComment({
+            owner,
+            repo,
+            comment_id: previousComment.id,
+            body: commentBody,
+          });
+        } else {
+          // Erstelle einen neuen Kommentar, wenn kein vorheriger Kommentar gefunden wurde
+          await github.rest.issues.createComment({
+            owner,
+            repo,
+            issue_number: prNumber,
+            body: commentBody,
+          });
+        }
