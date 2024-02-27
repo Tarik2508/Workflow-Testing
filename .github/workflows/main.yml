@@ -3,20 +3,38 @@ name: PR Automation with Azure OpenAI
 on:
   pull_request:
     types: [opened, synchronize, edited]
+  issue_comment:
+    types: [created]
 
 jobs:
   comment-with-pr-details:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
       - name: Comment PR and Commit Details
+        if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, 'update-details'))
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            const prNumber = context.payload.pull_request.number;
-            const prTitle = context.payload.pull_request.title;
-            const prBody = context.payload.pull_request.body;
-            const commitsUrl = context.payload.pull_request.commits_url;
+            const eventName = context.eventName;
+            const prNumber = eventName == 'pull_request' ? context.payload.pull_request.number : context.issue.number;
+            
+            // Fetch PR details if the event is a comment
+            let prTitle, prBody;
+            if (eventName == 'issue_comment') {
+              const pr = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+              });
+              prTitle = pr.data.title;
+              prBody = pr.data.body;
+            } else {
+              prTitle = context.payload.pull_request.title;
+              prBody = context.payload.pull_request.body;
+            }
             
             // Fetch the last commit details
             const commitsResponse = await github.rest.pulls.listCommits({
